@@ -49,7 +49,7 @@ ENV RATE_LIMIT=10
 EXPOSE 3000 9333
 
 # Health check — hit the /health endpoint.
-HEALTHCHECK --interval=30s --timeout=3s --start_period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget -qO- http://localhost:${PORT}/health || exit 1
 
 # Run the node.
