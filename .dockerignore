@@ -1,0 +1,29 @@
+# Binary
+noda
+
+# Data files
+node_data.json
+*.json
+!go.mod
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker (avoid recursive copy)
+Dockerfile
+.dockerignore
+
+# Docs (not needed in image)
+README.md
+LICENSE

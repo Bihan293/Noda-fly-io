@@ -1,0 +1,112 @@
+# Noda — Multi-Node Local Network
+#
+# Starts a 3-node cryptocurrency network with:
+# - Node 1: Main node with faucet enabled
+# - Node 2: Connected to Node 1
+# - Node 3: Connected to Node 1 and Node 2
+#
+# Usage:
+#   docker compose up --build
+#   docker compose down
+#
+# Access:
+#   Node 1: http://localhost:3000 (faucet enabled)
+#   Node 2: http://localhost:3001
+#   Node 3: http://localhost:3002
+#   Metrics: http://localhost:300X/metrics
+
+services:
+  node1:
+    build: .
+    container_name: noda-node1
+    ports:
+      - "3000:3000"
+      - "9333:9333"
+    environment:
+      - PORT=3000
+      - P2P_PORT=9333
+      - DATA_FILE=/app/node_data.json
+      - LOG_LEVEL=info
+      - RATE_LIMIT=20
+      # To enable faucet, set your hex-encoded Ed25519 private key:
+      # - FAUCET_KEY=your_hex_private_key_here
+    volumes:
+      - node1-data:/app
+    networks:
+      - noda-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+
+  node2:
+    build: .
+    container_name: noda-node2
+    ports:
+      - "3001:3001"
+      - "9334:9334"
+    environment:
+      - PORT=3001
+      - P2P_PORT=9334
+      - DATA_FILE=/app/node_data.json
+      - PEERS=http://node1:3000
+      - TCP_PEERS=node1:9333
+      - LOG_LEVEL=info
+      - RATE_LIMIT=20
+    volumes:
+      - node2-data:/app
+    networks:
+      - noda-net
+    depends_on:
+      node1:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+
+  node3:
+    build: .
+    container_name: noda-node3
+    ports:
+      - "3002:3002"
+      - "9335:9335"
+    environment:
+      - PORT=3002
+      - P2P_PORT=9335
+      - DATA_FILE=/app/node_data.json
+      - PEERS=http://node1:3000,http://node2:3001
+      - TCP_PEERS=node1:9333,node2:9334
+      - LOG_LEVEL=info
+      - RATE_LIMIT=20
+    volumes:
+      - node3-data:/app
+    networks:
+      - noda-net
+    depends_on:
+      node1:
+        condition: service_healthy
+      node2:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+
+volumes:
+  node1-data:
+  node2-data:
+  node3-data:
+
+networks:
+  noda-net:
+    driver: bridge
